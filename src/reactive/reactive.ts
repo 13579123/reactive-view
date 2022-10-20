@@ -1,5 +1,6 @@
 import {track, trigger} from "../effect/effect";
-import {getSymbolByName} from "../util";
+import {getSymbolByName, warn} from "../util";
+import {__DEV__} from "../config";
 
 /**
  * has been proxied object WeakMap
@@ -23,6 +24,8 @@ const PROXY_HANDLER = {
         const result = Reflect.get(target,key,receiver)
         // Get the corresponding dependency
         track(target , key)
+        // deal array
+        if (result instanceof Array) return proxyArray(result , target , key)
         // began depth proxy , Proxy Result if it is an object
         if (typeof result === 'object') return reactive(result)
         return result
@@ -39,10 +42,39 @@ const PROXY_HANDLER = {
 }
 
 /**
+ * Work with data of array type
+ * Make it available for response
+ * */
+const arrayPrototypeMethods: string[]
+    = ['push', 'pop', 'shift', 'unshift', 'splice', 'sort', 'reverse']
+export function proxyArray<T extends Array<any>>(arr: T, original: any, key: string|symbol): T {
+    let proxy
+    if (proxy = ProxyTableWeakMap.get(arr)) return proxy
+    for (const name of arrayPrototypeMethods) {
+        // @ts-ignore
+        arr[name] = function (...arg){
+            // @ts-ignore
+            const result = Array.prototype[name].call(arr , ...arg)
+            trigger(original , key , arr , arr)
+            return result
+        }
+    }
+    proxy = new Proxy(arr , PROXY_HANDLER)
+    ProxyTableWeakMap.set(arr , proxy)
+    return proxy
+}
+
+/**
  * Create reactive data
  * @param target : Object
  * */
 export function reactive<T extends object>(target: T): T {
+    if (!(typeof target === 'object') || (target instanceof Array)) {
+        if (__DEV__) warn('the type of target is ' +
+            typeof target + 'or array may you can' +
+            ' try use ref')
+        return target
+    }
     // @ts-ignore If it has been proxied, return it
     if (isProxy(target)) return target
     // If the object has been proxied, return its proxy

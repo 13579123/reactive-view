@@ -38,5 +38,5 @@ const buildConf = options => Object.assign({}, commonConf, options)
 
 
 export default outputMap.map(
-    output => buildConf({ output: {name: "Rvw", ...output} })
+    output => buildConf({ output: {name: "rvw", ...output} })
 )

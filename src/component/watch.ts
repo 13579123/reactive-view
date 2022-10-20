@@ -18,14 +18,15 @@ function getWatchArgument<T>(arg: WatchCallback<T>|WatchOption<T>): WatchOption<
 }
 
 export function watch<T extends object>(args: (() => T)|T,
-                                        callback: WatchCallback<T>): void {
+                                        callback: WatchCallback<T>|WatchOption<T>): void {
     const option = getWatchArgument(callback)
     let getter: () => T
+    let run: WatchCallback<T>
     // @ts-ignore set getters
     if (typeof args === "function") getter = args
     else {
         let result = reactive(args)
-        callback = option.handler
+        run = option.handler
         getter = () => {
             if (option.depth) readObject(result)
             return result
@@ -36,7 +37,7 @@ export function watch<T extends object>(args: (() => T)|T,
     effect(getter , {
         scheduler(runner) {
             let newValue = runner()
-            if (!first) callback(newValue , oldValue)
+            if (!first) run(newValue , oldValue)
             oldValue = newValue
             first = false
         }

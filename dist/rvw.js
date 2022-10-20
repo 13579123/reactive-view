@@ -1,13 +1,14 @@
 (function (global, factory) {
     typeof exports === 'object' && typeof module !== 'undefined' ? module.exports = factory() :
     typeof define === 'function' && define.amd ? define(factory) :
-    (global = typeof globalThis !== 'undefined' ? globalThis : global || self, global.Rvw = factory());
+    (global = typeof globalThis !== 'undefined' ? globalThis : global || self, global.rvw = factory());
 })(this, (function () { 'use strict';
 
     const SymbolNameTable = new Map();
     function getSymbolByName(name) {
         let s = SymbolNameTable.get(name);
-        if (s) return s;
+        if (s)
+            return s;
         s = Symbol();
         SymbolNameTable.set(name, s);
         return s;
@@ -204,6 +205,9 @@
             const result = Reflect.get(target, key, receiver);
             // Get the corresponding dependency
             track(target, key);
+            // deal array
+            if (result instanceof Array)
+                return proxyArray(result, target, key);
             // began depth proxy , Proxy Result if it is an object
             if (typeof result === 'object')
                 return reactive(result);
@@ -220,10 +224,35 @@
         }
     };
     /**
+     * Work with data of array type
+     * Make it available for response
+     * */
+    const arrayPrototypeMethods = ['push', 'pop', 'shift', 'unshift', 'splice', 'sort', 'reverse'];
+    function proxyArray(arr, original, key) {
+        let proxy;
+        if (proxy = ProxyTableWeakMap.get(arr))
+            return proxy;
+        for (const name of arrayPrototypeMethods) {
+            // @ts-ignore
+            arr[name] = function (...arg) {
+                // @ts-ignore
+                const result = Array.prototype[name].call(arr, ...arg);
+                trigger(original, key, arr, arr);
+                return result;
+            };
+        }
+        proxy = new Proxy(arr, PROXY_HANDLER);
+        ProxyTableWeakMap.set(arr, proxy);
+        return proxy;
+    }
+    /**
      * Create reactive data
      * @param target : Object
      * */
     function reactive(target) {
+        if (!(typeof target === 'object') || (target instanceof Array)) {
+            return target;
+        }
         // @ts-ignore If it has been proxied, return it
         if (isProxy(target))
             return target;
@@ -261,7 +290,13 @@
             trigger(this, 'value', this.data, oldValue);
         }
         constructor(data, option = {}) {
-            this.data = data;
+            if (data instanceof Array)
+                this.data = proxyArray(data, this, 'value');
+            // @ts-ignore
+            else if (typeof data === 'object')
+                this.data = reactive(data);
+            else
+                this.data = data;
             if (option.get)
                 this.get = option.get;
             if (option.set)
@@ -306,12 +341,13 @@
     function watch(args, callback) {
         const option = getWatchArgument(callback);
         let getter;
+        let run;
         // @ts-ignore set getters
         if (typeof args === "function")
             getter = args;
         else {
             let result = reactive(args);
-            callback = option.handler;
+            run = option.handler;
             getter = () => {
                 if (option.depth)
                     readObject(result);
@@ -324,7 +360,7 @@
             scheduler(runner) {
                 let newValue = runner();
                 if (!first)
-                    callback(newValue, oldValue);
+                    run(newValue, oldValue);
                 oldValue = newValue;
                 first = false;
             }

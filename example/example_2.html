@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <script src="./../dist/rvw.js"></script>
+</head>
+<body>
+<div class="box">
+    <ul id="show-ul"></ul>
+    <span id="list-number"></span>
+    <button onclick="addList()"> 添加list </button>
+</div>
+<script>
+    const ul = document.getElementById('show-ul')
+    const listNumber = document.getElementById('list-number')
+
+    const list = rvw.ref([])
+
+    rvw.effect(() => {
+        ul.innerHTML = ''
+        for (let i = 0; i < list.value.length; i++)
+            ul.innerHTML += `<li>我是第${i + 1}条数据,我是${list.value[i]}</li>`
+        listNumber.innerText = 'list 数量:' + list.value.length
+    })
+
+    function addList() {
+        list.value.push('hi' + (list.value.length + 1))
+    }
+</script>
+</body>
+</html>

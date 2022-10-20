@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<script src="./../dist/rvw.js"></script>
+<body>
+<div class="box">
+    <div id="count"></div>
+    <div class="buttons">
+        <button onclick="add()">+</button>
+        <button onclick="reduce()">-</button>
+    </div>
+</div>
+<script>
+    const ref = rvw.ref(0)
+
+    const countDom = document.getElementById('count')
+
+    rvw.effect(() => {
+        countDom.innerText = ref.value
+    })
+
+    function add() {ref.value++}
+    function reduce() {ref.value--}
+</script>
+</body>
+</html>
