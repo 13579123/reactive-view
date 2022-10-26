@@ -40,6 +40,7 @@ export function watch<T extends object>(args: (() => T)|T,
             if (!first) run(newValue , oldValue)
             oldValue = newValue
             first = false
+            return newValue
         }
     })
     return

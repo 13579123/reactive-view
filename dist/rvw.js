@@ -4,6 +4,19 @@
     (global = typeof globalThis !== 'undefined' ? globalThis : global || self, global.rvw = factory());
 })(this, (function () { 'use strict';
 
+    function warn(...rest) {
+        if (!console)
+            throw rest;
+        console.warn(...rest);
+    }
+    function error(...rest) {
+        if (!console)
+            throw rest;
+        console.error(...rest);
+    }
+    /**
+     * get symbol by string
+     * */
     const SymbolNameTable = new Map();
     function getSymbolByName(name) {
         let s = SymbolNameTable.get(name);
@@ -13,6 +26,9 @@
         SymbolNameTable.set(name, s);
         return s;
     }
+    /**
+     * Traversing an object in depth
+     * */
     function readObject(obj, deal) {
         const ReadPointerSet = new Set();
         function read(obj) {
@@ -251,6 +267,9 @@
      * */
     function reactive(target) {
         if (!(typeof target === 'object') || (target instanceof Array)) {
+            warn('the type of target of reactive argument is \'' +
+                (typeof target === 'object' ? 'array' : typeof target)
+                + '\', may you can' + ' try use ref');
             return target;
         }
         // @ts-ignore If it has been proxied, return it
@@ -286,6 +305,8 @@
         }
         set(v) {
             const oldValue = this.data;
+            if (v === this.data)
+                return;
             this.data = v;
             trigger(this, 'value', this.data, oldValue);
         }
@@ -317,6 +338,8 @@
             set(v) {
                 if (option.set)
                     option.set(v);
+                else
+                    error('this property is not define "setter"');
             }
         });
         effect(option.get, {
@@ -363,6 +386,7 @@
                     run(newValue, oldValue);
                 oldValue = newValue;
                 first = false;
+                return newValue;
             }
         });
         return;

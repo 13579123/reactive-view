@@ -70,9 +70,9 @@ export function proxyArray<T extends Array<any>>(arr: T, original: any, key: str
  * */
 export function reactive<T extends object>(target: T): T {
     if (!(typeof target === 'object') || (target instanceof Array)) {
-        if (__DEV__) warn('the type of target is ' +
-            typeof target + 'or array may you can' +
-            ' try use ref')
+        warn('the type of target of reactive argument is \'' +
+            (typeof target === 'object' ? 'array' : typeof target)
+            + '\', may you can' + ' try use ref')
         return target
     }
     // @ts-ignore If it has been proxied, return it

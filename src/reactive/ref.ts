@@ -21,6 +21,7 @@ export class Ref<T> {
     }
     private set(v: T) {
         const oldValue = this.data
+        if(v === this.data) return
         this.data = v
         trigger(this , 'value' , this.data , oldValue)
     }

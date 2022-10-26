@@ -8,9 +8,9 @@ import {toRow} from "../reactive/toRow";
  * onTrack default is null
  * onTrigger default is null
  * */
-interface EffectOption {
+interface EffectOption<T> {
     lazy?: boolean,
-    scheduler?: ( _runner: ()=>any ) => any,
+    scheduler?: ( _runner: ()=>T ) => T,
     onStop?: () => void,
     onTrack?: (e: TrackEvent) => void,
     onTrigger?: (e: TriggerEvent) => void,
@@ -21,7 +21,7 @@ type TrackEvent = {
     target: any,
     key: string|symbol,
     type: string,
-    effect: Runner,
+    effect: Runner<any>,
 }
 /** trigger event type */
 type TriggerEvent = {
@@ -30,10 +30,10 @@ type TriggerEvent = {
     type: string,
     oldValue: any,
     newValue: any,
-    effect: Runner,
+    effect: Runner<any>,
 }
 
-class Runner extends Function {
+export class Runner<T> extends Function {
     stop() {}
 }
 
@@ -42,20 +42,20 @@ class Runner extends Function {
  * all reactive data change will notice the object
  * uuid is the effect id
  * */
-class ReactiveEffect {
+class ReactiveEffect<T> {
     static uuid = 0
-    static CurrentEffect: ReactiveEffect|null = null
+    static CurrentEffect: ReactiveEffect<any>|null = null
     private activity: boolean = true
-    public parent: ReactiveEffect|null = null
+    public parent: ReactiveEffect<any>|null = null
     public readonly id: number
     public readonly runner: (() => any)
     public readonly scheduler: (( _runner: ()=>any ) => any)|null
     public readonly onTrack: ((e: TrackEvent) => any)|null
     public readonly onTrigger: ((e: TriggerEvent) => any)|null
     public readonly onStop: (() => any)|null
-    public callRunner: Runner|undefined
-    public depth: Set<ReactiveEffect>[] = []
-    constructor(runner: () => any , option: EffectOption = {}) {
+    public callRunner: Runner<T>|undefined
+    public depth: Set<ReactiveEffect<any>>[] = []
+    constructor(runner: () => any , option: EffectOption<T> = {}) {
         this.id = ++ReactiveEffect.uuid
         this.runner = runner
         this.scheduler = option.scheduler || null
@@ -99,14 +99,14 @@ class ReactiveEffect {
  * core effect function
  * Call run to re-render when data within run changes
  * */
-export function effect(run: () => any , option: EffectOption = {}): Runner {
+export function effect<T>(run: () => T , option: EffectOption<T> = {}): Runner<T> {
     const _effect = new ReactiveEffect(run , option)
 
     if (!option.lazy && _effect.scheduler)
         _effect.scheduler(_effect.run.bind(_effect))
     else if (!option.lazy) _effect.run()
 
-    let result: Runner
+    let result: Runner<T>
 
     if (_effect.scheduler)
         // @ts-ignore
@@ -125,7 +125,7 @@ export function effect(run: () => any , option: EffectOption = {}): Runner {
 /**
  * All dependent storage containers
  * */
-const DependentStorageWeakMap = new WeakMap<any,Map<string|symbol,Set<ReactiveEffect>>>()
+const DependentStorageWeakMap = new WeakMap<any,Map< string|symbol , Set< ReactiveEffect<any> > > >()
 
 /**
  * Collect all dependencies and bind them to the current effect
@@ -134,7 +134,7 @@ const DependentStorageWeakMap = new WeakMap<any,Map<string|symbol,Set<ReactiveEf
 export function track(target: any, key: string | symbol) {
     if (!ReactiveEffect.CurrentEffect) return
     const effect = ReactiveEffect.CurrentEffect
-    let map: Map<string | symbol , Set<ReactiveEffect>>|undefined,set: Set<ReactiveEffect>|undefined
+    let map: Map<string | symbol , Set<ReactiveEffect<any>>>|undefined,set: Set<ReactiveEffect<any>>|undefined
     map = DependentStorageWeakMap.get(target)
     if (!map) DependentStorageWeakMap.set(target , map = new Map)
     set = map.get(key)
@@ -159,7 +159,7 @@ export function track(target: any, key: string | symbol) {
 export function trigger(target: any, key: string | symbol,
                         newValue: any, oldValue: any) {
     let map:
-        Map<string|symbol,Set<ReactiveEffect>>|undefined,set:Set<ReactiveEffect>
+        Map<string|symbol,Set<ReactiveEffect<any>>>|undefined,set:Set<ReactiveEffect<any>>
         |
         undefined
     map = DependentStorageWeakMap.get(target)
