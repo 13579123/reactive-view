@@ -297,6 +297,8 @@
             return this.get();
         }
         set value(v) {
+            if (v instanceof Array)
+                v = proxyArray(v, this, 'value');
             this.set(v);
         }
         get() {

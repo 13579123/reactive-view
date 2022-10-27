@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/.idea/reactive-vue.iml" filepath="$PROJECT_DIR$/.idea/reactive-vue.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/reactive-view.iml" filepath="$PROJECT_DIR$/.idea/reactive-view.iml" />
     </modules>
   </component>
 </project>

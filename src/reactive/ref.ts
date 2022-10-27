@@ -2,6 +2,8 @@ import {track, trigger} from "../effect/effect";
 import {getSymbolByName} from "../util";
 import {proxyArray, reactive} from "./reactive";
 
+type RefOption<T> = {get?: () => T , set?: (v: T) => void}
+
 export class Ref<T> {
     public data: T
 
@@ -12,6 +14,7 @@ export class Ref<T> {
     }
 
     set value(v: T) {
+        if (v instanceof Array) v = proxyArray(v , this , 'value')
         this.set(v)
     }
 
@@ -26,7 +29,7 @@ export class Ref<T> {
         trigger(this , 'value' , this.data , oldValue)
     }
 
-    constructor(data: T , option: {get?: () => T , set?: (v: T) => void} = {}) {
+    constructor(data: T , option: RefOption<T> = {}) {
         if (data instanceof Array) this.data = proxyArray(data , this , 'value')
         // @ts-ignore
         else if (typeof data === 'object') this.data = reactive(data)
