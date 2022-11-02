@@ -45,8 +45,8 @@ const PROXY_HANDLER = {
  * Work with data of array type
  * Make it available for response
  * */
-const arrayPrototypeMethods: string[]
-    = ['push', 'pop', 'shift', 'unshift', 'splice', 'sort', 'reverse']
+const arrayPrototypeMethods =
+    ['push', 'pop', 'shift', 'unshift', 'splice', 'sort', 'reverse']
 export function proxyArray<T extends Array<any>>(arr: T, original: any, key: string|symbol): T {
     let proxy
     if (proxy = ProxyTableWeakMap.get(arr)) return proxy
@@ -69,6 +69,7 @@ export function proxyArray<T extends Array<any>>(arr: T, original: any, key: str
  * @param target : Object
  * */
 export function reactive<T extends object>(target: T): T {
+    if (!target) return target
     if (!(typeof target === 'object') || (target instanceof Array)) {
         warn('the type of target of reactive argument is \'' +
             (typeof target === 'object' ? 'array' : typeof target)
